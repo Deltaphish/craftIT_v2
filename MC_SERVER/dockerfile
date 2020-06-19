@@ -1,0 +1,31 @@
+FROM openjdk:8-alpine
+
+RUN apk update ; apk upgrade
+RUN apk add git curl screen maven
+
+WORKDIR /build
+
+RUN curl -o BuildTools.jar "https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar"
+RUN java -jar -Xmx1024M BuildTools.jar
+
+WORKDIR /server
+RUN mv /build/spigot-*.jar .
+ADD eula.txt server-icon.png server.properties spigot.yml bukkit.yml start.sh /server/
+RUN chmod +x ./start.sh
+
+WORKDIR /server/plugins/build
+RUN git clone https://github.com/sladkoff/minecraft-prometheus-exporter.git
+WORKDIR /server/plugins/build/minecraft-prometheus-exporter
+RUN mvn package
+
+WORKDIR /server/plugins
+RUN mv build/minecraft-prometheus-exporter/target/minecraft-prometheus-*.jar .
+ADD PrometheusExporter ./PrometheusExporter
+RUN rm -rf build
+
+WORKDIR /server
+
+EXPOSE 25565
+EXPOSE 9225
+
+CMD ./start.sh && tail -f /dev/null

@@ -1,0 +1,11 @@
+FROM grafana/grafana:7.0.3
+
+WORKDIR /etc/grafana/provisioning
+COPY dashboards dashboards/
+COPY datasources datasources/
+
+WORKDIR /var/lib/grafana/dashboards
+ADD minecraft-server-dashboard.json .
+
+USER grafana
+WORKDIR /usr/share/grafana
